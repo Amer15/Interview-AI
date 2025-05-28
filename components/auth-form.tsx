@@ -8,6 +8,13 @@ import Link from "next/link";
 import { toast } from "sonner";
 import FormField from "./form-field";
 import { Form } from "./ui/form";
+import { auth } from "@/firebase-config/client";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+} from "firebase/auth";
+import { signIn, signUp } from "@/lib/actions/auth.action";
+import { useRouter } from "next/navigation";
 
 const authFormSchema = (type: FormType) => {
   return z.object({
@@ -19,6 +26,7 @@ const authFormSchema = (type: FormType) => {
 };
 
 const AuthForm = ({ type }: { type: FormType }) => {
+  const router = useRouter();
   const formSchema = authFormSchema(type);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -29,20 +37,59 @@ const AuthForm = ({ type }: { type: FormType }) => {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       if (type === "sign-in") {
-        console.log("signing in.....");
+        const { email, password } = values;
         console.log(values);
+        const userCredentials = await signInWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
+
+        const idToken = await userCredentials.user.getIdToken();
+
+        if (!idToken) {
+          toast.error("failed to signin");
+          return;
+        }
+
+        await signIn({ idToken, email });
+
+        toast.success("signin successful");
+        router.push("/");
       } else {
-        console.log("signing up.....");
-        console.log(values);
+        const { name, email, password } = values;
+
+        const userCredentials = await createUserWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
+
+        const result = await signUp({
+          uid: userCredentials.user.uid,
+          name: name!,
+          email,
+          password,
+        });
+
+        if (!result?.success) {
+          toast.error(
+            result?.message || "failed to signup, something went wrong"
+          );
+          return;
+        }
+
+        toast.success("signup successful, please signin");
+        router.push("/signin");
       }
     } catch (error) {
       console.log(error);
       toast.error(`something went wrong: ${error}`);
     }
-  }
+  };
 
   const isSignIn = type === "sign-in";
 
