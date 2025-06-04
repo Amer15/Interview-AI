@@ -1,10 +1,25 @@
 import InterviewCard from "@/components/interview-card";
 import { Button } from "@/components/ui/button";
 import { dummyInterviews } from "@/constants";
+import { getCurrentUser } from "@/lib/actions/auth.action";
+import {
+  getInterviewsByUserId,
+  getLatestInterviews,
+} from "@/lib/actions/interview.action";
 import Image from "next/image";
 import Link from "next/link";
 
-const Homepage = () => {
+const Homepage = async () => {
+  const user = await getCurrentUser();
+  const [userInterviews, latestInterviews] = await Promise.all([
+    await getInterviewsByUserId(user?.id!),
+    await getLatestInterviews({ userId: user?.id! }),
+  ]);
+  const hasPastInterviews = userInterviews ? userInterviews.length > 0 : false;
+  const hasLatestInterviews = latestInterviews
+    ? latestInterviews.length > 0
+    : false;
+
   return (
     <>
       <section className="card-cta">
@@ -28,17 +43,25 @@ const Homepage = () => {
       <section className="flex flex-col gap-6 mt-8">
         <h2>Your Interviews</h2>
         <div className="interviews-section">
-          {dummyInterviews.map((interview) => (
-            <InterviewCard key={interview.id} {...interview} />
-          ))}
+          {hasPastInterviews ? (
+            userInterviews?.map((interview) => (
+              <InterviewCard key={interview.id} {...interview} />
+            ))
+          ) : (
+            <p>you have&apos;t taken any interview</p>
+          )}
         </div>
       </section>
       <section className="flex flex-col gap-6 mt-8">
         <h2>Take an interview</h2>
         <div className="interviews-section">
-          {dummyInterviews.map((interview) => (
-            <InterviewCard key={interview.id} {...interview} />
-          ))}
+          {hasLatestInterviews ? (
+            latestInterviews?.map((interview) => (
+              <InterviewCard key={interview.id} {...interview} />
+            ))
+          ) : (
+            <p>no latest interviews to show</p>
+          )}
         </div>
       </section>
     </>
