@@ -17,7 +17,7 @@ export const getInterviewsByUserId = async (
       ...doc.data(),
     })) as Interview[];
   } catch (error) {
-    console.log(`failed to get interview, ${error}`);
+    console.log(`failed to get interviews, ${error}`);
     return null;
   }
 };
@@ -35,11 +35,23 @@ export const getLatestInterviews = async (
       .orderBy("createdAt", "desc")
       .limit(limit)
       .get();
-      
+
     return interviews.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
     })) as Interview[];
+  } catch (error) {
+    console.log(`failed to get interviews, ${error}`);
+    return null;
+  }
+};
+
+export const getInterviewById = async (
+  id: string
+): Promise<Interview | null> => {
+  try {
+    const interviews = await db.collection("interviews").doc(id).get();
+    return interviews.data() as Interview;
   } catch (error) {
     console.log(`failed to get interview, ${error}`);
     return null;
