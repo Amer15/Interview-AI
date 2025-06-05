@@ -5,6 +5,7 @@ import Image from "next/image";
 import { vapi } from "@/lib/vapi";
 import { useRouter } from "next/navigation";
 import { interviewer } from "@/constants";
+import { createFeedback } from "@/lib/actions/interview.action";
 
 enum CallStatus {
   INACTIVE = "INACTIVE",
@@ -69,13 +70,13 @@ const Agent = ({
   const generateInterviewFeedback = async (messages: SavedMessage[]) => {
     try {
       console.log("Generating feedback...");
-      const { success, id } = {
-        success: true,
-        id: "feedback-id",
-      };
-      console.log({ success, id });
+      const feedbackId = await createFeedback({
+        interviewId: interviewId!,
+        userId: userId!,
+        transcript: messages,
+      });
 
-      if (success && id) {
+      if (feedbackId) {
         router.push(`/interview/${interviewId}/feedback`);
       } else {
         console.log("failed to generate feedback");
